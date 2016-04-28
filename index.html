@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+  <meta name="description" content="">
+  <meta name="author" content="magic">
+
+  <title>JavaScript性能优化 for Bootstrap</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom styles for this template -->
+  <link href="css/jumbotron-narrow.css" rel="stylesheet">
+
+
+</head>
+
+<body>
+  <div class="container">
+    <div class="header clearfix">
+      <nav>
+        <ul class="nav nav-pills pull-right">
+          <li role="presentation" class="active"><a href="#">Home</a></li>
+          <li role="presentation"><a href="#">About</a></li>
+          <li role="presentation"><a href="#">Contact</a></li>
+        </ul>
+      </nav>
+      <h3 class="text-muted">Full text search</h3>
+    </div>
+
+    <div class="jumbotron">
+      <form>
+        <div class="form-group form-group-search">
+          <h1><label for="exampleInputEmail1">搜索内容</label></h1>
+          <input type="search" class="form-control" id="search" placeholder="请输入本页面内容">
+
+          <div class="search-result" style="display:none">
+            <h4>标题</h4>
+            <ul class="result-section">
+              <li><a href="">dsfsdfsdf</a></li>
+              <li><a href="">sdfsdf</a></li>
+
+            </ul>
+            <h4>内容</h4>
+            <ul class="result-content">
+              <li><a href="">sdfsdf</a></li>
+              <li><a href="">sdfsd</a></li>
+
+            </ul>
+          </div>
+        </div>
+
+      </form>
+
+
+      <p class="lead">单页面全文搜索插件，支持瞄点跳转，依赖Jquery、bootstrap。</p>
+      <p><a class="btn btn-lg btn-success" href="#" role="button">立即下载</a></p>
+    </div>
+
+    <div class="row marketing">
+      <div class="col-lg-12" id="result-list">
+        <h4 id="a">javascript前言</h4>
+        <p>一直在学习javascript，也有看过《犀利开发Jquery内核详解与实践》，对这本书的评价只有两个字犀利，可能是对javascript理解的还不够透彻异或是自己太笨，更多的是自己不擅于思考懒得思考以至于里面说的一些精髓都没有太深入的理解。 鉴于想让自己有一个提升，进不了一个更加广阔的天地，总得找一个属于自己的居所好好生存，所以平时会有意无意的去积累一些使用jQuerry的常用知识，特别是对于性能要求这一块，总是会想是不是有更好的方式来实现。 下面是我总结的一些小技巧，仅供参考。(我先会说一个总标题，然后用一小段话来说明这个意思
+          再最后用一个demo来简单言明)
+        </p>
+
+        <h4 id="b">避免全局查找</h4>
+        <p>在一个函数中会用到全局对象存储为局部变量来减少全局查找，因为访问局部变量的速度要比访问全局变量的速度更快些
+          <pre>
+        function search() {
+            //当我要使用当前页面地址和主机域名
+            alert(window.location.href + window.location.host);
+        }
+        //最好的方式是如下这样  先用一个简单变量保存起来
+        function search() {
+            var location = window.location;
+            alert(location.href + location.host);
+        }
+</pre>
+        </p>
+
+        <h4 id="c">定时器</h4>
+        <p>
+          如果针对的是不断运行的代码，不应该使用setTimeout，而应该是用setInterval，因为setTimeout每一次都会初始化一个定时器，而setInterval只会在开始的时候初始化一个定时器
+
+          <pre>
+  var timeoutTimes = 0;
+     function timeout() {
+         timeoutTimes++;
+         if (timeoutTimes < 10) {
+             setTimeout(timeout, 10);
+         }
+     }
+     timeout();
+     //可以替换为：
+     var intervalTimes = 0;
+     function interval() {
+         intervalTimes++;
+         if (intervalTimes >= 10) {
+             clearInterval(interv);
+         }
+     }
+     var interv = setInterval(interval, 10);
+</pre>
+        </p>
+
+        <h4 id="e">字符串连接</h4>
+        <p>
+          如果要连接多个字符串，应该少使用+=，如 s+=a; s+=b; s+=c; 应该写成s+=a + b + c； 而如果是收集字符串，比如多次对同一个字符串进行+=操作的话，最好使用一个缓存，使用JavaScript数组来收集，最后使用join方法连接起来
+          <pre>
+  var buf = [];
+      for (var i = 0; i < 100; i++) {
+          buf.push(i.toString());
+      }
+      var all = buf.join("");
+</pre>
+        </p>
+
+
+        <h4>避免with语句</h4>
+        <p>和函数类似 ，with语句会创建自己的作用域，因此会增加其中执行的代码的作用域链的长度，由于额外的作用域链的查找，在with语句中执行的代码肯定会比外面执行的代码要慢，在能不使用with语句的时候尽量不要使用with语句。
+          <pre>
+  with (a.b.c.d) {
+            property1 = 1;
+            property2 = 2;
+        }
+        //可以替换为：
+        var obj = a.b.c.d;
+        obj.property1 = 1;
+        obj.property2 = 2;
+</pre>
+        </p>
+
+
+        <h4 id="f">各种类型转换</h4>
+        <p><pre>
+          var myVar = "3.14159",
+        str = "" + myVar, //  to string
+        i_int = ~ ~myVar,  //  to integer
+        f_float = 1 * myVar,  //  to float
+        b_bool = !!myVar,  /*  to boolean - any string with length
+                                and any number except 0 are true */
+        array = [myVar];  //  to array
+        </pre></p>
+
+        <h4 id="g">多个类型声明</h4>
+        <p>在JavaScript中所有变量都可以使用单个var语句来声明，这样就是组合在一起的语句，以减少整个脚本的执行时间，就如上面代码一样，上面代码格式也挺规范，让人一看就明了。
+
+        </p>
+      </div>
+
+
+    </div>
+
+    <footer class="footer">
+      <p>&copy; Company 2014</p>
+    </footer>
+
+  </div>
+  <!-- /container -->
+
+  <script>
+    window.jQuery || document.write('<script src="js/jquery-1.9.1.min.js"><\/script>')
+  </script>
+  <script type="text/javascript" src="js/anchor.js"></script>
+  <script type="text/javascript" src="js/jquery.full-search.js"></script>
+  <script type="text/javascript">
+    $(function() {
+      
+      $('#search').fullsearch({
+        highlight: true,
+        search_data: ".search-result",
+        search_title: ".result-section",
+        search_content: ".result-content",
+        list: "#result-list",
+        nodata: "未找到相关数据",
+      });
+
+
+    });
+  </script>
+
+</body>
+
+</html>
